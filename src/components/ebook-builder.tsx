@@ -9,6 +9,7 @@ import { Header } from "./header";
 import { SettingsPanel } from "./settings-panel";
 import { Sheet, SheetContent } from "./ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { AIGenerationModal } from "./ai-generation-modal";
 
 interface Theme {
   id: string;
@@ -111,6 +112,7 @@ export function EbookBuilder({ initialEbook }: EbookBuilderProps) {
   const [logoSelectionMode, setLogoSelectionMode] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [mobileSidebarTab, setMobileSidebarTab] = useState<"pages" | "editor">("pages");
+  const [aiModalOpen, setAiModalOpen] = useState(false);
 
   const selectedPage = ebook.pages.find((p) => p.id === selectedPageId);
 
@@ -192,6 +194,12 @@ export function EbookBuilder({ initialEbook }: EbookBuilderProps) {
     setImagePanelOpen(false);
   };
 
+  const handleAIGenerate = async (description: string) => {
+    // The API routes handle the actual generation
+    // This function is just a placeholder since the modal handles the API calls
+    console.log("Generating ebook with description:", description);
+  };
+
   return (
     <div className="h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950">
       <Header
@@ -199,6 +207,7 @@ export function EbookBuilder({ initialEbook }: EbookBuilderProps) {
         onOpenThemePanel={handleOpenThemePanel}
         onOpenLayoutPanel={handleOpenLayoutPanel}
         onMobileSidebarToggle={() => setMobileSidebarOpen(true)}
+        onOpenAIModal={() => setAiModalOpen(true)}
       />
 
         <div className="flex-1 flex overflow-hidden">
@@ -295,6 +304,14 @@ export function EbookBuilder({ initialEbook }: EbookBuilderProps) {
             </Tabs>
           </SheetContent>
         </Sheet>
+
+        {/* AI Generation Modal */}
+        <AIGenerationModal
+          isOpen={aiModalOpen}
+          onClose={() => setAiModalOpen(false)}
+          onGenerate={handleAIGenerate}
+          ebookId={ebook.id}
+        />
       </div>
   );
 }

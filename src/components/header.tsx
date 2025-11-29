@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "./ui/button";
-import { BookOpen, Download, Save, Palette, LayoutTemplate, PanelLeft } from "lucide-react";
+import { BookOpen, Download, Save, Palette, LayoutTemplate, PanelLeft, Sparkles } from "lucide-react";
 
 interface Theme {
   id: string;
@@ -19,6 +19,7 @@ interface HeaderProps {
   onOpenThemePanel: () => void;
   onOpenLayoutPanel: () => void;
   onMobileSidebarToggle: () => void;
+  onOpenAIModal: () => void;
 }
 
 export function Header({
@@ -26,6 +27,7 @@ export function Header({
   onOpenThemePanel,
   onOpenLayoutPanel,
   onMobileSidebarToggle,
+  onOpenAIModal,
 }: HeaderProps) {
   return (
     <header className="h-14 md:h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl flex items-center justify-between px-3 sm:px-4 md:px-6 relative z-10">
@@ -52,6 +54,18 @@ export function Header({
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2">
+        <Button
+          variant="default"
+          size="sm"
+          className="gap-1 sm:gap-2 h-7 sm:h-8 text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          onClick={onOpenAIModal}
+        >
+          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span className="hidden sm:inline">AI Generate</span>
+        </Button>
+
+        <div className="w-px h-4 sm:h-6 bg-zinc-200 dark:border-zinc-700 mx-0.5 sm:mx-1" />
+
         <Button
           variant="outline"
           size="sm"

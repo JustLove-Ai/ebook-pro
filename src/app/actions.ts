@@ -168,6 +168,18 @@ export async function reorderPages(ebookId: string, pageIds: string[]) {
   }
 }
 
+export async function deleteAllPages(ebookId: string) {
+  try {
+    await prisma.page.deleteMany({
+      where: { ebookId },
+    });
+    revalidatePath("/");
+  } catch (error) {
+    console.error("Failed to delete all pages:", error);
+    throw new Error("Failed to delete all pages");
+  }
+}
+
 // Theme Actions
 export async function getAllThemes() {
   try {

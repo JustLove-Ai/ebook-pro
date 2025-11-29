@@ -12,7 +12,12 @@
       "Bash(git init:*)",
       "Bash(git add:*)",
       "Bash(dir /s /b nul)",
-      "Bash(if exist nul del nul)"
+      "Bash(if exist nul del nul)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
