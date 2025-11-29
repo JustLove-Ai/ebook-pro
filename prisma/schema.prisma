@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Ebook {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String   @default("Untitled Ebook")
+  description String?
+  themeId     String   @db.ObjectId
+  theme       Theme    @relation(fields: [themeId], references: [id])
+  pages       Page[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Page {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  ebookId     String   @db.ObjectId
+  ebook       Ebook    @relation(fields: [ebookId], references: [id], onDelete: Cascade)
+  order       Int
+  title       String?
+  content     String   @default("")
+  template    String   @default("text-only") // text-only, image-top, image-bottom, two-column, blog-post, full-image
+  imageUrl    String?
+  customStyles Json?    // Custom styles for this specific page
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ebookId, order])
+}
+
+model Theme {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  name            String   @unique
+  primaryColor    String   @default("#000000")
+  secondaryColor  String   @default("#666666")
+  accentColor     String   @default("#0066ff")
+  backgroundColor String   @default("#ffffff")
+  textColor       String   @default("#000000")
+  headingFont     String   @default("Inter")
+  bodyFont        String   @default("Inter")
+  h1Size          String   @default("2.5rem")
+  h2Size          String   @default("2rem")
+  h3Size          String   @default("1.5rem")
+  bodySize        String   @default("1rem")
+  ebooks          Ebook[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
