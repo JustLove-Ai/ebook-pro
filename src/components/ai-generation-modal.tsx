@@ -302,7 +302,7 @@ export function AIGenerationModal({ isOpen, onClose, onGenerate, ebookId }: AIGe
                 </Button>
               </div>
             </>
-          ) : isGenerating || stage === "expanding" || stage === "complete" ? (
+          ) : (isGenerating || stage === "expanding" || stage === "complete") ? (
             <>
               <div className="space-y-4">
                 {/* Progress Bar */}
@@ -352,7 +352,7 @@ export function AIGenerationModal({ isOpen, onClose, onGenerate, ebookId }: AIGe
                 </Button>
               </div>
             </>
-          )}
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>
