@@ -116,6 +116,17 @@ export function EbookBuilder({ initialEbook }: EbookBuilderProps) {
 
   const selectedPage = ebook.pages.find((p) => p.id === selectedPageId);
 
+  const scrollToPage = (pageId: string) => {
+    setSelectedPageId(pageId);
+    // Scroll to the page smoothly
+    setTimeout(() => {
+      const element = document.getElementById(`page-${pageId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 100);
+  };
+
   const handlePageUpdate = (updates: Partial<Page>) => {
     setEbook((prev) => ({
       ...prev,
@@ -218,7 +229,7 @@ export function EbookBuilder({ initialEbook }: EbookBuilderProps) {
               <PagesSidebar
                 ebook={ebook}
                 selectedPageId={selectedPageId}
-                onSelectPage={setSelectedPageId}
+                onSelectPage={scrollToPage}
                 onPagesUpdate={(pages) => setEbook((prev) => ({ ...prev, pages }))}
               />
             </div>
@@ -233,16 +244,31 @@ export function EbookBuilder({ initialEbook }: EbookBuilderProps) {
             </div>
           </div>
 
-          {/* Main Content - Preview */}
+          {/* Main Content - Preview - Show All Pages */}
           <div className="flex-1 flex overflow-hidden min-w-0">
             <div className="flex-1 bg-zinc-100 dark:bg-zinc-950 overflow-auto">
-              <PagePreview
-                page={selectedPage}
-                theme={ebook.theme}
-                onOpenImagePanel={handleOpenImagePanel}
-                pageIndex={selectedPage ? ebook.pages.findIndex(p => p.id === selectedPage.id) : 0}
-                totalPages={ebook.pages.length}
-              />
+              <div className="min-h-full p-4 sm:p-6 md:p-8 lg:p-12 space-y-8">
+                {ebook.pages.map((page, index) => (
+                  <div
+                    key={page.id}
+                    id={`page-${page.id}`}
+                    className={`transition-all ${
+                      selectedPageId === page.id
+                        ? "ring-4 ring-blue-500 ring-offset-4 ring-offset-zinc-100 dark:ring-offset-zinc-950"
+                        : ""
+                    }`}
+                    onClick={() => setSelectedPageId(page.id)}
+                  >
+                    <PagePreview
+                      page={page}
+                      theme={ebook.theme}
+                      onOpenImagePanel={handleOpenImagePanel}
+                      pageIndex={index}
+                      totalPages={ebook.pages.length}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Right Panels */}
@@ -288,7 +314,7 @@ export function EbookBuilder({ initialEbook }: EbookBuilderProps) {
                   ebook={ebook}
                   selectedPageId={selectedPageId}
                   onSelectPage={(id) => {
-                    setSelectedPageId(id);
+                    scrollToPage(id);
                     setMobileSidebarTab("editor");
                   }}
                   onPagesUpdate={(pages) => setEbook((prev) => ({ ...prev, pages }))}

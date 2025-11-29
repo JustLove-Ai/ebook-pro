@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
+import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Loader2, Sparkles, X, CheckCircle2 } from "lucide-react";
+import { Loader2, Sparkles, X, CheckCircle2, Plus, Trash2, GripVertical } from "lucide-react";
 import { Progress } from "./ui/progress";
 
 interface AIGenerationModalProps {
@@ -15,7 +16,7 @@ interface AIGenerationModalProps {
   ebookId: string;
 }
 
-type GenerationStage = "idle" | "outline" | "expanding" | "complete";
+type GenerationStage = "idle" | "outline" | "review" | "expanding" | "complete";
 
 export function AIGenerationModal({ isOpen, onClose, onGenerate, ebookId }: AIGenerationModalProps) {
   const [description, setDescription] = useState("");
@@ -24,6 +25,7 @@ export function AIGenerationModal({ isOpen, onClose, onGenerate, ebookId }: AIGe
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState("");
   const [outline, setOutline] = useState<string[]>([]);
+  const [editableOutline, setEditableOutline] = useState<string[]>([]);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   const handleGenerate = async () => {
@@ -50,26 +52,51 @@ export function AIGenerationModal({ isOpen, onClose, onGenerate, ebookId }: AIGe
 
       const outlineData = await outlineRes.json();
       setOutline(outlineData.outline);
-      setProgress(30);
-      setCurrentStep("Outline created! Generating content...");
-      setStage("expanding");
+      setEditableOutline(outlineData.outline);
+      setProgress(100);
+      setCurrentStep("Outline ready for review!");
+      setStage("review");
+      setIsGenerating(false);
+      setAbortController(null);
 
+    } catch (error: any) {
+      if (error.name === "AbortError" || error.message === "Generation cancelled") {
+        setCurrentStep("Generation cancelled");
+      } else {
+        console.error("Generation error:", error);
+        setCurrentStep("Error generating outline. Please try again.");
+      }
+      setIsGenerating(false);
+      setStage("idle");
+    }
+  };
+
+  const handleGenerateContent = async () => {
+    setIsGenerating(true);
+    setStage("expanding");
+    setProgress(10);
+    setCurrentStep("Generating content...");
+
+    const controller = new AbortController();
+    setAbortController(controller);
+
+    try {
       // Stage 2: Expand each section
-      const totalSections = outlineData.outline.length;
+      const totalSections = editableOutline.length;
 
       for (let i = 0; i < totalSections; i++) {
         if (controller.signal.aborted) {
           throw new Error("Generation cancelled");
         }
 
-        setCurrentStep(`Writing section ${i + 1} of ${totalSections}: ${outlineData.outline[i]}`);
+        setCurrentStep(`Writing section ${i + 1} of ${totalSections}: ${editableOutline[i]}`);
 
         const expandRes = await fetch("/api/generate-content", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             ebookId,
-            sectionTitle: outlineData.outline[i],
+            sectionTitle: editableOutline[i],
             sectionIndex: i,
             totalSections,
             description,
@@ -79,7 +106,7 @@ export function AIGenerationModal({ isOpen, onClose, onGenerate, ebookId }: AIGe
 
         if (!expandRes.ok) throw new Error(`Failed to generate section ${i + 1}`);
 
-        const progressPercent = 30 + ((i + 1) / totalSections) * 65;
+        const progressPercent = 10 + ((i + 1) / totalSections) * 85;
         setProgress(progressPercent);
       }
 
@@ -125,7 +152,32 @@ export function AIGenerationModal({ isOpen, onClose, onGenerate, ebookId }: AIGe
     setStage("idle");
     setCurrentStep("");
     setOutline([]);
+    setEditableOutline([]);
     onClose();
+  };
+
+  const handleAddChapter = () => {
+    setEditableOutline([...editableOutline, "New Chapter"]);
+  };
+
+  const handleRemoveChapter = (index: number) => {
+    setEditableOutline(editableOutline.filter((_, i) => i !== index));
+  };
+
+  const handleEditChapter = (index: number, value: string) => {
+    const newOutline = [...editableOutline];
+    newOutline[index] = value;
+    setEditableOutline(newOutline);
+  };
+
+  const handleMoveChapter = (index: number, direction: "up" | "down") => {
+    if (direction === "up" && index === 0) return;
+    if (direction === "down" && index === editableOutline.length - 1) return;
+
+    const newOutline = [...editableOutline];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    [newOutline[index], newOutline[targetIndex]] = [newOutline[targetIndex], newOutline[index]];
+    setEditableOutline(newOutline);
   };
 
   return (
@@ -142,7 +194,7 @@ export function AIGenerationModal({ isOpen, onClose, onGenerate, ebookId }: AIGe
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {!isGenerating ? (
+          {stage === "idle" ? (
             <>
               <div className="space-y-2">
                 <Label htmlFor="description">Ebook Description</Label>
@@ -169,11 +221,88 @@ export function AIGenerationModal({ isOpen, onClose, onGenerate, ebookId }: AIGe
                   className="gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
-                  Generate Ebook
+                  Create Outline
                 </Button>
               </div>
             </>
-          ) : (
+          ) : stage === "review" ? (
+            <>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-semibold">Review & Edit Outline</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleAddChapter}
+                    className="gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Chapter
+                  </Button>
+                </div>
+
+                <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-3 space-y-2 max-h-[400px] overflow-y-auto">
+                  {editableOutline.map((chapter, index) => (
+                    <div key={index} className="flex items-center gap-2 bg-white dark:bg-zinc-800 rounded-lg p-3 border border-zinc-200 dark:border-zinc-700">
+                      <GripVertical className="w-4 h-4 text-zinc-400 shrink-0 cursor-move" />
+                      <Input
+                        value={chapter}
+                        onChange={(e) => handleEditChapter(index, e.target.value)}
+                        className="flex-1 h-8 text-sm"
+                      />
+                      <div className="flex gap-1 shrink-0">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => handleMoveChapter(index, "up")}
+                          disabled={index === 0}
+                        >
+                          ↑
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => handleMoveChapter(index, "down")}
+                          disabled={index === editableOutline.length - 1}
+                        >
+                          ↓
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 hover:bg-red-100 hover:text-red-600"
+                          onClick={() => handleRemoveChapter(index)}
+                          disabled={editableOutline.length === 1}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-xs text-zinc-500">
+                  Review and edit the chapters. You can add, remove, reorder, or rename them. Each chapter will be expanded into detailed content.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={handleClose}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleGenerateContent}
+                  disabled={editableOutline.length === 0}
+                  className="gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Generate Content ({editableOutline.length} chapters)
+                </Button>
+              </div>
+            </>
+          ) : isGenerating || stage === "expanding" || stage === "complete" ? (
             <>
               <div className="space-y-4">
                 {/* Progress Bar */}

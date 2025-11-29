@@ -36,10 +36,12 @@ The content should be:
 - Well-structured with clear paragraphs
 - Informative and valuable to readers
 - Written in a professional yet accessible tone
-- Between 400-800 words
+- Between 250-400 words (keep it concise to fit on one page)
+- Use <h2> or <h3> for subheadings within the section
 
 Return the content as HTML with proper paragraph tags (<p>), headings (<h2>, <h3>), and formatting as needed.
-DO NOT include the section title as an <h1> - that will be added separately.`,
+DO NOT include the section title as an <h1> - that will be added separately.
+IMPORTANT: Keep content concise to fit on a single ebook page.`,
         },
         {
           role: "user",
